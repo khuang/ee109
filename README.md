@@ -2,7 +2,7 @@
 
 ## Introduction
 
-For our project, we will be accelerating the K Nearest Neighbors machine learning algorithm. We will be using a dataset on iris plants with four features: sepal length, sepal width, petal length, and petal width. We will then use these features to characterize the class of the Iris in one of three classes(Iris SEtosa, Iris Versicolour, Iris Virginica).
+For our project, we will be accelerating the K Nearest Neighbors machine learning algorithm. We will be using a dataset on iris plants with four features: sepal length, sepal width, petal length, and petal width. We will then use these features to characterize the class of the Iris in one of three classes(Iris SEtosa, Iris Versicolour, Iris Virginica). The dataset can be found at: https://archive.ics.uci.edu/ml/datasets/iris. 
 
 ## Literature Survey
 
