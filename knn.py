@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+import time
 from sklearn import datasets
 from sklearn.decomposition import PCA
 
@@ -16,28 +17,42 @@ def distance(x, y): #using euclidian for now at least
 iris = datasets.load_iris()
 
 #scramble the data
+
+num_tests = 50
+
 random.seed(0)
 scrambled_data = list(zip(iris.data, iris.target))
 random.shuffle(scrambled_data)
-train = scrambled_data[:100]
-test = scrambled_data[100:]
+train = scrambled_data[:(len(iris.data)-50)]
+test = scrambled_data[(len(iris.data)-50):]
 
-num_tests = 50
-successes = 0
-k = 2
-for x1, y1 in test:
-	dists = []
-	for x2, y2 in train:
-		dist = distance(x1, x2)
-		dists.append((dist, y2))
-	dists.sort() #not sure what sort this uses
-	_, neighbors = zip(*dists[0:k])
-	label = max(set(neighbors), key=neighbors.count)
-	if label == y1:
-		successes+=1
+rates = []
+times = []
+ks = range(1,25)
+for k in ks:
+	successes = 0
+	start_time = time.time()
+	for x1, y1 in test:
+		dists = []
+		for x2, y2 in train:
+			dist = distance(x1, x2)
+			dists.append((dist, y2))
+		dists.sort() #not sure what sort this uses
+		_, neighbors = zip(*dists[0:k])
+		label = max(set(neighbors), key=neighbors.count)
+		if label == y1:
+			successes+=1
+	time_elapsed = time.time() - start_time
+	times.append(time_elapsed)
+	rates.append(successes/num_tests)
 
-print(str(successes)+" sucessful characterizations")
-print(str(num_tests-successes)+" failed characterizations")
-print(str(100* successes / num_tests)+"% accurate")
+plt.plot(ks, rates)
+plt.xlabel("K Value")
+plt.ylabel("Successs Rate")
+plt.show()
+plt.plot(ks, times)
+plt.xlabel("K Value")
+plt.ylabel("Runtime")
+plt.show()
 
 #then, an optimized implementation
