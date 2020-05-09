@@ -43,12 +43,12 @@ def knn_classify(x, train, k):
 
 #setup stuff
 iris = datasets.load_iris()
-num_tests = 5
+num_tests = 10
 all_rates = {}
 all_times = {}
 ks = range(1,20)
 distance_types = ["euclidian", "manhattan", "chebyshev"]
-seeds = range(1,100)
+seeds = range(1,50)
 
 #try different distance metrics
 for type in distance_types:
@@ -91,18 +91,46 @@ for type in distance_types:
 	all_rates[type] = type_rates
 	all_times[type] = type_times
 
+#then, an optimized implementation
+x = iris.data
+y = iris.target
+
+# random.seed(0)
+# scrambled_data = list(zip(iris.data, iris.target))
+# random.shuffle(scrambled_data)
+# x,y = zip(*scrambled_data)
+
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn import metrics
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.1, random_state = 4)
+
+scores = []
+times = []
+for k in ks:
+	start_time = time.time()
+	knn = KNeighborsClassifier(n_neighbors=k)
+	knn.fit(x_train, y_train)
+	y_pred=knn.predict(x_test)
+	time_elapsed = time.time() - start_time
+	times.append(time_elapsed)
+	scores.append(metrics.accuracy_score(y_test, y_pred))
+
+
 #plot the data
 for type in distance_types:
 	plt.plot(ks, all_rates[type], label=type)
+
+plt.plot(ks, scores, label = "sklearn")
 plt.xlabel("K Value")
 plt.ylabel("Successs Rate")
 plt.legend()
 plt.show()
+
 for type in distance_types:
 	plt.plot(ks, all_times[type], label=type)
+plt.plot(ks, times, label = "sklearn")
 plt.xlabel("K Value")
 plt.ylabel("Runtime")
 plt.legend()
 plt.show()
-
-#then, an optimized implementation
