@@ -1,16 +1,17 @@
 # Milestone 1 Submission
 
-## Application Description: 
-```bash
-# Please describe the application you want to work on here
-```
+## Application Description:
+We implemented K-Nearest Neighbors on the Iris dataset using multiple distance metrics, as well as using SciKit Learn, and analyzed the performance. The simpler distance metrics (Chebyshev & Manhattan distance) offered faster run-times with comparable or better performance than the Euclidian distance; as such, these are the main distance metrics we're considering for our hardware implementation.
 
-## Software Implementation: 
-```bash
-# Please add your implementation of the application in software here. If you use github / bitbucket for version control, you can give a link to your repo. 
-```
+## Software Implementation:
+
+Our software implementation is located on github, at `https://github.com/khuang/ee109`.
 
 ## Setup Instructions:
+
+Running our application requires python3.6 or above with sklearn.
+Just run:
 ```bash
-# Please add instructions for running your software demo here
+python knn.py
 ```
+The performance metrics will automatically be plotted.
