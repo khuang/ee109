@@ -25,9 +25,9 @@ We will be measuring the quality of our design through multiple metrics. Primari
 
 ## Planning
 
-1. Software Simulation (Milestone 1 due May 18)
+1. Software Simulation (Milestone 1 due May 11)
     * We are planning to complete the software simulation for this project by the first project milestone of May 18. For the software simulation, we are planning to implement KNN and play around to determinethe best distance function and the value of k to use for our project.
-2. Hardware Simulation (Milestone 2 due May 27)
+2. Hardware Simulation (Milestone 2 due May 20)
     * We will complete the initial hardware simulation by the milestone date of May 27. This will primarily be our first stage of hardware implementation and will optimize this implementation for performance in the next stage of the project.
 3. Hardware Deployment (Milestone 3 due June 8)
     * Since we will not be able to deploy our project on hardware this quarter, for this milestone we will focus on improving our design's performance.
