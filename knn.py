@@ -15,7 +15,7 @@ def distance(x, y, type):
 	if type == "euclidian":
 		for i in range(len(x)):
 			distance += (x[i] - y[i])**2
-		return np.sqrt(distance)
+		return distance
 	#manhattan distance
 	if type == "manhattan":
 		for i in range(len(x)):
