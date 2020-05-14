@@ -15,3 +15,8 @@ Just run:
 python knn.py
 ```
 The performance metrics will automatically be plotted.
+
+## Performance Analysis:
+
+![Performance Analysis](performance_figure.png)
+**Figure 1: Runtime vs K**
