@@ -6,7 +6,7 @@ import scala.math.abs
 @spatial object KNN extends SpatialApp {
   def main(args: Array[String]): Unit = {
 
-    val k = 1
+    val k = 2
     val test_size = 2
     val train_size = 10
     val v_len = 2
@@ -31,11 +31,13 @@ import scala.math.abs
 
     // temp test vars
     val outputDRAM = DRAM[Int](train_size.to[Int], test_size.to[Int])
+    val sortedDRAM = DRAM[Int](k.to[Int], test_size.to[Int])
 
     Accel {
       val nTrain = 10.to[Int]
       val nTest = 2.to[Int]
       val vLen = 2.to[Int]
+      val k = 2.to[Int]
 
       val base = 0.to[Int]
       val test_par = 1.to[Int]
@@ -69,10 +71,39 @@ import scala.math.abs
       }
 
       outputDRAM(base :: nTrain, base :: nTest) store distances
+
+      val sorted_sram = SRAM[Int](k, nTest)
+      val sorted_labels_sram = SRAM[Int](k, nTest)
+
+      val sort_par = 1.to[Int]
+      val max_dist = 100.to[Int]
+
+      val old_dist = RegFile[Int](nTest)
+
+      Foreach(nTest par test_par){ test_idx => 
+        //old_dist(test_idx) = 0.to[Int]
+        Sequential.Foreach(k by 1){ k_id =>
+          val best = Reg[Int](0)
+        
+          Reduce(best)(nTrain by 1 par sort_par){ train_idx =>
+            val dist = distances(train_idx, test_idx)
+            mux(dist <= old_dist(test_idx), max_dist, dist)
+          }{(a,b) => mux(a<b, a, b)}
+          
+          sorted_sram(k_id, test_idx) = best
+          old_dist(test_idx) = best
+        }
+      }
+
+      sortedDRAM(base :: k, base :: nTest) store sorted_sram
     }
 
     print("dists")
     val dists = getMatrix(outputDRAM)
     printMatrix(dists)
+
+    print("sorted")
+    val sort = getMatrix(sortedDRAM)
+    printMatrix(sort)
   }
 }
