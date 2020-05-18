@@ -12,8 +12,8 @@ import scala.math.abs
     val v_len = 2
     
     //dummy data
-    val test_set = (0::test_size, 0::v_len){(i,j) => i}
-    val train_set = (0::train_size, 0::v_len){(i,j) => 10 - i}
+    val test_set = (0::test_size, 0::v_len){(i,j) => i.to[Float]}
+    val train_set = (0::train_size, 0::v_len){(i,j) => (10 - i).to[Float]}
     val train_labels = scala.Array(1,2)
 
     print("test")
@@ -21,8 +21,8 @@ import scala.math.abs
     print("train")
     printMatrix(train_set)
 
-    val dTrain = DRAM[Int](train_size.to[Int], v_len.to[Int])
-    val dTest = DRAM[Int](test_size.to[Int], v_len.to[Int])
+    val dTrain = DRAM[Float](train_size.to[Int], v_len.to[Int])
+    val dTest = DRAM[Float](test_size.to[Int], v_len.to[Int])
 
     val classification = ArgOut[Int]
 
@@ -30,8 +30,8 @@ import scala.math.abs
     setMem(dTest, test_set)
 
     // temp test vars
-    val outputDRAM = DRAM[Int](train_size.to[Int], test_size.to[Int])
-    val sortedDRAM = DRAM[Int](k.to[Int], test_size.to[Int])
+    val outputDRAM = DRAM[Float](train_size.to[Int], test_size.to[Int])
+    val sortedDRAM = DRAM[Float](k.to[Int], test_size.to[Int])
 
     Accel {
       val nTrain = 10.to[Int]
@@ -46,16 +46,16 @@ import scala.math.abs
       val load_par = 1.to[Int]
       val step = 1.to[Int]
 
-      val test_sram = SRAM[Int](nTest, vLen)
-      val train_sram = SRAM[Int](nTrain, vLen)
-      val distances = SRAM[Int](nTrain, nTest)
+      val test_sram = SRAM[Float](nTest, vLen)
+      val train_sram = SRAM[Float](nTrain, vLen)
+      val distances = SRAM[Float](nTrain, nTest)
 
       test_sram load dTest(base :: nTest par load_par, base :: vLen)
       train_sram load dTrain(base :: nTrain par load_par, base :: vLen)
 
       Foreach(nTest by step par test_par){ test_idx =>
         Foreach(nTrain by step par train_par){ train_idx =>
-          val distance = Reg[Int](0)
+          val distance = Reg[Float](0)
           Reduce(distance)(vLen by 1 par dist_par){ i =>
             val pos = test_sram(test_idx, i) - train_sram(train_idx, i)
             val neg = train_sram(train_idx, i) - test_sram(test_idx, i)
@@ -72,18 +72,18 @@ import scala.math.abs
 
       outputDRAM(base :: nTrain, base :: nTest) store distances
 
-      val sorted_sram = SRAM[Int](k, nTest)
-      val sorted_labels_sram = SRAM[Int](k, nTest)
+      val sorted_sram = SRAM[Float](k, nTest)
+      val sorted_labels_sram = SRAM[Float](k, nTest)
 
       val sort_par = 1.to[Int]
-      val max_dist = 100.to[Int]
+      val max_dist = 100.to[Float]
 
-      val old_dist = RegFile[Int](nTest)
+      val old_dist = RegFile[Float](nTest)
 
       Foreach(nTest par test_par){ test_idx => 
         //old_dist(test_idx) = 0.to[Int]
         Sequential.Foreach(k by 1){ k_id =>
-          val best = Reg[Int](0)
+          val best = Reg[Float](0)
         
           Reduce(best)(nTrain by 1 par sort_par){ train_idx =>
             val dist = distances(train_idx, test_idx)
