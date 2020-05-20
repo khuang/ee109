@@ -14,23 +14,28 @@ import spatial.dsl._
 @spatial object KNN extends SpatialApp {
   def main(args: Array[String]): Unit = {
 
-    val k = 2
-    val test_size = 2
-    val train_size = 10
-    val v_len = 2
+    val k_num = 5
+    val test_size = 15
+    val train_size = 135
+    val v_len = 4
     
     //dummy data
-    val test_set = (0::test_size, 0::v_len){(i,j) => (i*8).to[Float]}
-    val train_set = (0::train_size, 0::v_len){(i,j) => (10 - i).to[Float]}
-    val train_labels_scala = scala.Array(0,0,0,0,0,1,1,1,1,1)
-    val train_labels = toSpatialIntArray(train_labels_scala)
+    //val test_set = (0::test_size, 0::v_len){(i,j) => (i*8).to[Float]}
+    //val train_set = (0::train_size, 0::v_len){(i,j) => (10 - i).to[Float]}
+    //val train_labels_scala = scala.Array(0,0,0,0,0,1,1,1,1,1)
+    //val train_labels = toSpatialIntArray(train_labels_scala)
 
-    print("test")
-    printMatrix(test_set)
-    print("train")
-    printMatrix(train_set)
-    print("labels")
-    printArray(train_labels)
+    //print("test")
+    //printMatrix(test_set)
+    //print("train")
+    //printMatrix(train_set)
+    //print("labels")
+    //printArray(train_labels)
+
+    val test_set = loadCSV2D[Float]("/home/zachbela/spatial/apps/src/test.csv", ",")
+    val test_labels = loadCSV1D[Int]("/home/zachbela/spatial/apps/src/test_labels.csv", "\n")
+    val train_set = loadCSV2D[Float]("/home/zachbela/spatial/apps/src/train.csv", ",")
+    val train_labels = loadCSV1D[Int]("/home/zachbela/spatial/apps/src/train_labels.csv", "\n")
 
     val dTrain = DRAM[Float](train_size.to[Int], v_len.to[Int])
     val dTest = DRAM[Float](test_size.to[Int], v_len.to[Int])
@@ -42,14 +47,14 @@ import spatial.dsl._
 
     // temp test vars
     val distanceDRAM = DRAM[DistLabel](train_size.to[Int], test_size.to[Int])
-    val sortedDRAM = DRAM[DistLabel](k.to[Int], test_size.to[Int])
+    val sortedDRAM = DRAM[DistLabel](k_num.to[Int], test_size.to[Int])
     val outputDRAM = DRAM[Int](test_size.to[Int])
 
     Accel {
-      val nTrain = 10.to[Int]
-      val nTest = 2.to[Int]
-      val vLen = 2.to[Int]
-      val k = 2.to[Int]
+      val nTrain = train_size.to[Int]
+      val nTest = test_size.to[Int]
+      val vLen = v_len.to[Int]
+      val k = k_num.to[Int]
       val classes = 3.to[Int]
 
       val base = 0.to[Int]
@@ -141,16 +146,27 @@ import spatial.dsl._
       outputDRAM(base :: nTest) store class_sram
     }
 
-    print("dists")
-    val dists = getMatrix(distanceDRAM)
-    printMatrix(dists)
+    //print("dists")
+    //val dists = getMatrix(distanceDRAM)
+    //printMatrix(dists)
 
-    print("sorted")
-    val sort = getMatrix(sortedDRAM)
-    printMatrix(sort)
+    //print("sorted")
+    //val sort = getMatrix(sortedDRAM)
+    //printMatrix(sort)
 
-    print("classes")
+    print("classification")
     val out = getMem(outputDRAM)
     printArray(out)
+
+    print("gold")
+    printArray(test_labels)
+
+    val right = out.zip(test_labels){(a,b) => if(a == b){1}else{0}}.reduce{_+_}
+    println("accuracy")
+    print(right)
+    print("/")
+    println(test_size)
+    val acc = right.to[Float]/test_size.to[Float]
+    println(acc)
   }
 }
