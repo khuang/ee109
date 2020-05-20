@@ -32,10 +32,10 @@ import spatial.dsl._
     //print("labels")
     //printArray(train_labels)
 
-    val test_set = loadCSV2D[Float]("/home/zachbela/spatial/apps/src/test.csv", ",")
-    val test_labels = loadCSV1D[Int]("/home/zachbela/spatial/apps/src/test_labels.csv", "\n")
-    val train_set = loadCSV2D[Float]("/home/zachbela/spatial/apps/src/train.csv", ",")
-    val train_labels = loadCSV1D[Int]("/home/zachbela/spatial/apps/src/train_labels.csv", "\n")
+    val test_set = loadCSV2D[Float](sys.env("TEST_DATA_HOME") + "test.csv", ",")
+    val test_labels = loadCSV1D[Int](sys.env("TEST_DATA_HOME") + "test_labels.csv", "\n")
+    val train_set = loadCSV2D[Float](sys.env("TEST_DATA_HOME") + "train.csv", ",")
+    val train_labels = loadCSV1D[Int](sys.env("TEST_DATA_HOME") + "train_labels.csv", "\n")
 
     val dTrain = DRAM[Float](train_size.to[Int], v_len.to[Int])
     val dTest = DRAM[Float](test_size.to[Int], v_len.to[Int])
