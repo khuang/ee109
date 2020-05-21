@@ -5,27 +5,30 @@
 import Utils.toSpatialIntArray
 import spatial.dsl._
 
-@struct class DistLabel(
-  dist: Float,
-  label: Int
-)
-
-@struct class LabelCount(
-  label: Int,
-  count: Int
-)
 
 @spatial object KNN extends SpatialApp {
   def main(args: Array[String]): Unit = {
+
+    type Q8_8 = FixPt[TRUE, _8, _8]
+
+    @struct class DistLabel(
+      dist: Q8_8,
+      label: Int
+    )
+
+    @struct class LabelCount(
+      label: Int,
+      count: Int
+    )
 
     val k_num = 5
     val test_size = 15
     val train_size = 135
     val v_len = 4
-
+    
     //dummy data
-    //val test_set = (0::test_size, 0::v_len){(i,j) => (i*8).to[Float]}
-    //val train_set = (0::train_size, 0::v_len){(i,j) => (10 - i).to[Float]}
+    //val test_set = (0::test_size, 0::v_len){(i,j) => (i*8).to[Q8_8]}
+    //val train_set = (0::train_size, 0::v_len){(i,j) => (10 - i).to[Q8_8]}
     //val train_labels_scala = scala.Array(0,0,0,0,0,1,1,1,1,1)
     //val train_labels = toSpatialIntArray(train_labels_scala)
 
@@ -36,13 +39,13 @@ import spatial.dsl._
     //print("labels")
     //printArray(train_labels)
 
-    val test_set = loadCSV2D[Float](sys.env("TEST_DATA_HOME") + "test.csv", ",")
+    val test_set = loadCSV2D[Q8_8](sys.env("TEST_DATA_HOME") + "test.csv", ",")
     val test_labels = loadCSV1D[Int](sys.env("TEST_DATA_HOME") + "test_labels.csv", "\n")
-    val train_set = loadCSV2D[Float](sys.env("TEST_DATA_HOME") + "train.csv", ",")
+    val train_set = loadCSV2D[Q8_8](sys.env("TEST_DATA_HOME") + "train.csv", ",")
     val train_labels = loadCSV1D[Int](sys.env("TEST_DATA_HOME") + "train_labels.csv", "\n")
 
-    val dTrain = DRAM[Float](train_size.to[Int], v_len.to[Int])
-    val dTest = DRAM[Float](test_size.to[Int], v_len.to[Int])
+    val dTrain = DRAM[Q8_8](train_size.to[Int], v_len.to[Int])
+    val dTest = DRAM[Q8_8](test_size.to[Int], v_len.to[Int])
     val dLabels = DRAM[Int](train_size.to[Int])
 
     setMem(dTrain, train_set)
@@ -68,19 +71,19 @@ import spatial.dsl._
       val load_par = 1.to[Int]
       val step = 1.to[Int]
 
-      val test_sram = SRAM[Float](nTest, vLen)
-      val train_sram = SRAM[Float](nTrain, vLen)
+      val test_sram = SRAM[Q8_8](nTest, vLen)
+      val train_sram = SRAM[Q8_8](nTrain, vLen)
       val label_sram = SRAM[Int](nTrain)
       val distances = SRAM[DistLabel](nTrain, nTest)
 
-      test_sram load dTest(base :: nTest par load_par, base :: vLen)
-      train_sram load dTrain(base :: nTrain par load_par, base :: vLen)
+      test_sram load dTest(base :: nTest, base :: vLen par load_par)
+      train_sram load dTrain(base :: nTrain, base :: vLen par load_par)
       label_sram load dLabels(base :: nTrain par load_par)
-
+      
       // calculate the distances in parallel
       Foreach(nTest by step par test_par){ test_idx =>
         Foreach(nTrain by step par train_par){ train_idx =>
-          val distance = Reg[Float](0)
+          val distance = Reg[Q8_8](0)
           Reduce(distance)(vLen by 1 par dist_par){ i =>
             val pos = test_sram(test_idx, i) - train_sram(train_idx, i)
             val neg = train_sram(train_idx, i) - test_sram(test_idx, i)
@@ -97,24 +100,24 @@ import spatial.dsl._
       val sorted_sram = SRAM[DistLabel](k, nTest)
 
       val sort_par = 1.to[Int]
-      val max_dist = 100.to[Float]
+      val max_dist = 100.to[Q8_8]
 
-      val old_dist = RegFile[Float](nTest)
+      val old_dist = RegFile[Q8_8](nTest)
       val filler_distlabel = DistLabel(max_dist, 0)
 
       // find the N largest elements
       // (this runs in K log(N) for the full reduce tree i think)
-      Foreach(nTest par test_par){ test_idx =>
+      Foreach(nTest par test_par){ test_idx => 
         Sequential.Foreach(k by 1){ k_id =>
           val best = Reg[DistLabel]
-
+        
           Reduce(best)(nTrain by 1 par sort_par){ train_idx =>
             val elem = distances(train_idx, test_idx)
             val dist = elem.dist
             val label = elem.label
             mux(dist <= old_dist(test_idx), filler_distlabel, elem)
           }{(a,b) => mux(a.dist<b.dist, a, b)}
-
+          
           sorted_sram(k_id, test_idx) = best
           old_dist(test_idx) = best.dist
         }
@@ -138,12 +141,12 @@ import spatial.dsl._
           val count = totals_sram(label, test_idx).count
           totals_sram(label, test_idx) = LabelCount(label, count+1)
         }
-
+        
         val classif = Reg[LabelCount]
         Reduce(classif)(classes by 1 par class_par){ c =>
           totals_sram(c, test_idx)
         }{(a,b) => mux(a.count>b.count, a, b)}
-
+        
         class_sram(test_idx) = classif.label
       }
 
@@ -170,11 +173,10 @@ import spatial.dsl._
     print(right)
     print("/")
     println(test_size)
-    val acc = right.to[Float]/test_size.to[Float]
+    val acc = right.to[Q8_8]/test_size.to[Q8_8]
     println(acc)
   }
 }
-
 ```
 
 ## Scala Simulation Result
