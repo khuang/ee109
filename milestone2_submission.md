@@ -22,7 +22,7 @@ import spatial.dsl._
     val test_size = 15
     val train_size = 135
     val v_len = 4
-    
+
     //dummy data
     //val test_set = (0::test_size, 0::v_len){(i,j) => (i*8).to[Float]}
     //val train_set = (0::train_size, 0::v_len){(i,j) => (10 - i).to[Float]}
@@ -76,7 +76,7 @@ import spatial.dsl._
       test_sram load dTest(base :: nTest par load_par, base :: vLen)
       train_sram load dTrain(base :: nTrain par load_par, base :: vLen)
       label_sram load dLabels(base :: nTrain par load_par)
-      
+
       // calculate the distances in parallel
       Foreach(nTest by step par test_par){ test_idx =>
         Foreach(nTrain by step par train_par){ train_idx =>
@@ -104,17 +104,17 @@ import spatial.dsl._
 
       // find the N largest elements
       // (this runs in K log(N) for the full reduce tree i think)
-      Foreach(nTest par test_par){ test_idx => 
+      Foreach(nTest par test_par){ test_idx =>
         Sequential.Foreach(k by 1){ k_id =>
           val best = Reg[DistLabel]
-        
+
           Reduce(best)(nTrain by 1 par sort_par){ train_idx =>
             val elem = distances(train_idx, test_idx)
             val dist = elem.dist
             val label = elem.label
             mux(dist <= old_dist(test_idx), filler_distlabel, elem)
           }{(a,b) => mux(a.dist<b.dist, a, b)}
-          
+
           sorted_sram(k_id, test_idx) = best
           old_dist(test_idx) = best.dist
         }
@@ -138,12 +138,12 @@ import spatial.dsl._
           val count = totals_sram(label, test_idx).count
           totals_sram(label, test_idx) = LabelCount(label, count+1)
         }
-        
+
         val classif = Reg[LabelCount]
         Reduce(classif)(classes by 1 par class_par){ c =>
           totals_sram(c, test_idx)
         }{(a,b) => mux(a.count>b.count, a, b)}
-        
+
         class_sram(test_idx) = classif.label
       }
 
@@ -178,7 +178,13 @@ import spatial.dsl._
 ```
 
 ## Scala Simulation Result
+Our Scala sim can successfully classify data with decent accuracy.
 ```bash
-
+classification
+2 0 2 2 2 1 2 0 0 2 0 0 0 1 2
+gold
+2 0 2 2 2 1 1 0 0 2 0 0 0 1 2
+accuracy
+14/15
+0.933333337306976318359375
 ```
-
