@@ -5,10 +5,10 @@ import spatial.dsl._
 @spatial object KNN extends SpatialApp {
   def main(args: Array[String]): Unit = {
 
-    type Q8_8 = FixPt[TRUE, _8, _8]
+    type Q16_16 = FixPt[TRUE, _16, _16]
 
     @struct class DistLabel(
-      dist: Q8_8,
+      dist: Q16_16,
       label: Int
     )
 
@@ -23,8 +23,8 @@ import spatial.dsl._
     val v_len = 4
     
     //dummy data
-    //val test_set = (0::test_size, 0::v_len){(i,j) => (i*8).to[Q8_8]}
-    //val train_set = (0::train_size, 0::v_len){(i,j) => (10 - i).to[Q8_8]}
+    //val test_set = (0::test_size, 0::v_len){(i,j) => (i*8).to[Q16_16]}
+    //val train_set = (0::train_size, 0::v_len){(i,j) => (10 - i).to[Q16_16]}
     //val train_labels_scala = scala.Array(0,0,0,0,0,1,1,1,1,1)
     //val train_labels = toSpatialIntArray(train_labels_scala)
 
@@ -35,13 +35,13 @@ import spatial.dsl._
     //print("labels")
     //printArray(train_labels)
 
-    val test_set = loadCSV2D[Q8_8](sys.env("TEST_DATA_HOME") + "test.csv", ",")
+    val test_set = loadCSV2D[Q16_16](sys.env("TEST_DATA_HOME") + "test.csv", ",")
     val test_labels = loadCSV1D[Int](sys.env("TEST_DATA_HOME") + "test_labels.csv", "\n")
-    val train_set = loadCSV2D[Q8_8](sys.env("TEST_DATA_HOME") + "train.csv", ",")
+    val train_set = loadCSV2D[Q16_16](sys.env("TEST_DATA_HOME") + "train.csv", ",")
     val train_labels = loadCSV1D[Int](sys.env("TEST_DATA_HOME") + "train_labels.csv", "\n")
 
-    val dTrain = DRAM[Q8_8](train_size.to[Int], v_len.to[Int])
-    val dTest = DRAM[Q8_8](test_size.to[Int], v_len.to[Int])
+    val dTrain = DRAM[Q16_16](train_size.to[Int], v_len.to[Int])
+    val dTest = DRAM[Q16_16](test_size.to[Int], v_len.to[Int])
     val dLabels = DRAM[Int](train_size.to[Int])
 
     setMem(dTrain, train_set)
@@ -67,8 +67,8 @@ import spatial.dsl._
       val load_par = 1.to[Int]
       val step = 1.to[Int]
 
-      val test_sram = SRAM[Q8_8](nTest, vLen)
-      val train_sram = SRAM[Q8_8](nTrain, vLen)
+      val test_sram = SRAM[Q16_16](nTest, vLen)
+      val train_sram = SRAM[Q16_16](nTrain, vLen)
       val label_sram = SRAM[Int](nTrain)
       val distances = SRAM[DistLabel](nTrain, nTest)
 
@@ -79,7 +79,7 @@ import spatial.dsl._
       // calculate the distances in parallel
       Foreach(nTest by step par test_par){ test_idx =>
         Foreach(nTrain by step par train_par){ train_idx =>
-          val distance = Reg[Q8_8](0)
+          val distance = Reg[Q16_16](0)
           Reduce(distance)(vLen by 1 par dist_par){ i =>
             val pos = test_sram(test_idx, i) - train_sram(train_idx, i)
             val neg = train_sram(train_idx, i) - test_sram(test_idx, i)
@@ -96,9 +96,9 @@ import spatial.dsl._
       val sorted_sram = SRAM[DistLabel](k, nTest)
 
       val sort_par = 1.to[Int]
-      val max_dist = 100.to[Q8_8]
+      val max_dist = 100.to[Q16_16]
 
-      val old_dist = RegFile[Q8_8](nTest)
+      val old_dist = RegFile[Q16_16](nTest)
       val filler_distlabel = DistLabel(max_dist, 0)
 
       // find the N largest elements
@@ -127,11 +127,14 @@ import spatial.dsl._
 
       val class_par = 1.to[Int]
 
+      Foreach(nTest par test_par){ test_idx =>
+        Foreach(classes by 1 par class_par){ c =>
+          totals_sram(c, test_idx) = LabelCount(c, 0)
+        }
+      }
+
       // find the most common element in the sorted sets
       Foreach(nTest par test_par){ test_idx =>
-        //Foreach(classes by 1 par class_par){ c =>
-        //  totals_sram(c, test_idx) = LabelCount(c, 0)
-        //}
         Foreach(k by 1 par class_par){ kk =>
           val label = sorted_sram(kk, test_idx).label
           val count = totals_sram(label, test_idx).count
@@ -169,7 +172,7 @@ import spatial.dsl._
     print(right)
     print("/")
     println(test_size)
-    val acc = right.to[Q8_8]/test_size.to[Q8_8]
+    val acc = right.to[Q16_16]/test_size.to[Q16_16]
     println(acc)
   }
 }
