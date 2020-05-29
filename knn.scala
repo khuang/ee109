@@ -80,6 +80,8 @@ import spatial.dsl._
       Foreach(nTest by step par test_par){ test_idx =>
         Foreach(nTrain by step par train_par){ train_idx =>
           val distance = Reg[Q16_16](0)
+          //Reduction for manhattan and chebyshev
+
           Reduce(distance)(vLen by 1 par dist_par){ i =>
             val pos = test_sram(test_idx, i) - train_sram(train_idx, i)
             val neg = train_sram(train_idx, i) - test_sram(test_idx, i)
@@ -87,6 +89,14 @@ import spatial.dsl._
             abs
           //}{_+_} //this is the manhattan distance
           }{(a,b) => mux(a>b, a, b)} //this is the chebyshev distance
+          
+          //Reduction for euclidian
+          
+          //Reduce(distance)(vLen by 1 par dist_par){ i =>
+          //    val diff = test_sram(test_idx, i) - train_sram(train_idx, i)
+          //    diff*diff //no abs or sqrt needed
+          //}{_+_}
+
           distances(train_idx, test_idx) = DistLabel(distance, label_sram(train_idx))
         }
       }
