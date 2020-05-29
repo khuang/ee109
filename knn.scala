@@ -85,7 +85,8 @@ import spatial.dsl._
             val neg = train_sram(train_idx, i) - test_sram(test_idx, i)
             val abs = mux(pos > neg, pos, neg) //jank absolute value function
             abs
-          }{_+_} //this is the manhattan distance
+          //}{_+_} //this is the manhattan distance
+          }{(a,b) => mux(a>b, a, b)} //this is the chebyshev distance
           distances(train_idx, test_idx) = DistLabel(distance, label_sram(train_idx))
         }
       }
