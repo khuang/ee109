@@ -66,7 +66,9 @@ Our base implementation used the Manhattan distance, and achieved 93% classifica
 | F8 Muxes                             |   256 |     0 |     54650 |  0.47 |
 +--------------------------------------+-------+-------+-----------+-------+
 ```
-This is slightly better than the Manhattan distance in all categories, likely due to the relative simplicity of using comparisons rather than additions. We also tried the Euclidean distance, which also gave us an accuracy of 93%. However, it ran in 105356 cycles, and had a resource utilization of:
+This is slightly better than the Manhattan distance in all categories, likely due to the relative simplicity of using comparisons rather than additions. The other major advantage of the Chebyshev distance is that it significantly lowers the dynamic range of the values we're using, so we can use fewer bits to represent distances.
+
+We also tried the Euclidean distance, which also gave us an accuracy of 93%. However, it ran in 105356 cycles, and had a resource utilization of:
 ```
 +--------------------------------------+-------+-------+-----------+-------+
 |               Site Type              |  Used | Fixed | Available | Util% |
@@ -87,15 +89,32 @@ This is slightly better than the Manhattan distance in all categories, likely du
 ```
 The Euclidian distance had the worst resource utilization across the board, likely due to the high hardware cost of multiplication. **As such, we decided to go with the Chebyshev distance as our distance metric, as it achieved the same accuracy as the other metrics while minimizing runtime and resource utilization.**
 
+Our base implementation used k reduction trees, performed sequentially, to find the k nearest neighbors to our test data point. We compared that to a mergesort, which could potentially allow for better runtime at the cost of more resource utilization, due to it sorting the whole list rather than finding just the lowest k elements. Our base implementation with the Chebyshev distance ran in 97256 cycles; with mergesort, it ran in X cycles, and had the following resource utilization:
+```
+```
+
 For the iris dataset, we only have three possible labels, and have relatively low precision data points; thus, we can use significantly fewer bits for both our labels and our data points. This saves on SRAM usage and also yields smaller logic units, decreasing resource utilization.
 
+The maximum value for a distance in our dataset is 7.9. Thus, the smallest data format we can use that fits our distances while still being aligned for our DRAM read and writes is an 8-bit, fixed-point value, with 4 fraction bits. We lose a bit of fractional precision, but changing to 8-bit values maintains our 93% accuracy. However, it does cause runtime to slightly increase, to 106636 cycles. This is likely due to the cost of converting labels from chars to integers, as SRAMs need to be integer-indexed. The resource utilization of the 8-bit version is:
 ```
++--------------------------------------+-------+-------+-----------+-------+
+|               Site Type              |  Used | Fixed | Available | Util% |
++--------------------------------------+-------+-------+-----------+-------+
+| Slice LUTs                           | 42203 |     0 |    218600 | 19.31 |
+|   LUT as Logic                       | 29353 |     0 |    218600 | 13.43 |
+|   LUT as Memory                      |  3854 |     0 |     70400 |  5.47 |
+|     LUT as Distributed RAM           |  1980 |     0 |           |       |
+|     LUT as Shift Register            |  1874 |     0 |           |       |
+|   LUT used exclusively as pack-thrus |  8996 |     0 |    218600 |  4.12 |
+| Slice Registers                      | 47656 |     0 |    437200 | 10.90 |
+|   Register as Flip Flop              | 47651 |     0 |    437200 | 10.90 |
+|   Register as Latch                  |     0 |     0 |    437200 |  0.00 |
+|   Register as pack-thrus             |     5 |     0 |    437200 | <0.01 |
+| F7 Muxes                             |  1359 |     0 |    109300 |  1.24 |
+| F8 Muxes                             |   296 |     0 |     54650 |  0.54 |
++--------------------------------------+-------+-------+-----------+-------+
 ```
-
-Our base implementation used k reduction trees, performed sequentially, to find the k nearest neighbors to our test data point. We compared that to a mergesort, which could potentially allow for better runtime at the cost of more resource utilization, due to it sorting the whole list rather than finding just the lowest k elements.
-
-```
-```
+Switching to 8-bit values decreased resource utilization, especially of LUTs used as memory, as the amount of memory that we need to store is now much smaller. **As such, we decided to use 8-bit values for our optimized algorithm.**
 
 Finally, we experimented with different parallelization values to find a good compromise between runtime and resource utilization.
 
