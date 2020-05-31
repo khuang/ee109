@@ -45,6 +45,8 @@ Our VCS simulation ran in 92724 cycles, and had the following resource utilizati
 
 **We looked at three main ways to improve speed, resource utilization, and classification accuracy: lowering bit-precision, increasing parallelization, and changing the algorithm itself.**
 
+### Distance Metrics
+
 We started by investigating different distance metrics (Euclidean, Chebyshev, and Manhattan) to determine which resulted in the highest accuracy and the lowest resource utilization.
 
 Our base implementation used the Manhattan distance, and achieved 93% classification accuracy, in 92724 cycles, with the resource utilization above. Using the Chebyshev distance gave the same classification accuracy (93%), a runtime of 97256 cycles, and a resource utilization of:
@@ -89,9 +91,30 @@ We also tried the Euclidean distance, which also gave us an accuracy of 93%. How
 ```
 The Euclidian distance had the worst resource utilization across the board, likely due to the high hardware cost of multiplication. **As such, we decided to go with the Chebyshev distance as our distance metric, as it achieved the same accuracy as the other metrics while minimizing runtime and resource utilization.**
 
-Our base implementation used k reduction trees, performed sequentially, to find the k nearest neighbors to our test data point. We compared that to a mergesort, which could potentially allow for better runtime at the cost of more resource utilization, due to it sorting the whole list rather than finding just the lowest k elements. Our base implementation with the Chebyshev distance ran in 97256 cycles; with mergesort, it ran in X cycles, and had the following resource utilization:
+### Sorting Methods
+
+Our base implementation used k reduction trees, performed sequentially, to find the k nearest neighbors to our test data point. We compared that to a mergesort, which could potentially allow for better runtime at the cost of more resource utilization, due to it sorting the whole list rather than finding just the lowest k elements. Our base implementation with the Chebyshev distance ran in 97256 cycles; with mergesort, it ran in 106968 cycles, and had the following resource utilization:
 ```
++--------------------------------------+--------+-------+-----------+-------+
+|               Site Type              |  Used  | Fixed | Available | Util% |
++--------------------------------------+--------+-------+-----------+-------+
+| Slice LUTs                           | 171951 |     0 |    218600 | 78.66 |
+|   LUT as Logic                       | 153729 |     0 |    218600 | 70.32 |
+|   LUT as Memory                      |   6306 |     0 |     70400 |  8.96 |
+|     LUT as Distributed RAM           |   4228 |     0 |           |       |
+|     LUT as Shift Register            |   2078 |     0 |           |       |
+|   LUT used exclusively as pack-thrus |  11916 |     0 |    218600 |  5.45 |
+| Slice Registers                      |  93765 |     0 |    437200 | 21.45 |
+|   Register as Flip Flop              |  93760 |     0 |    437200 | 21.45 |
+|   Register as Latch                  |      0 |     0 |    437200 |  0.00 |
+|   Register as pack-thrus             |      5 |     0 |    437200 | <0.01 |
+| F7 Muxes                             |   1461 |     0 |    109300 |  1.34 |
+| F8 Muxes                             |    320 |     0 |     54650 |  0.59 |
++--------------------------------------+--------+-------+-----------+-------+
 ```
+The fact that mergsort needs to sort the entire list, rather than just find the k smallest elements, significantly increases its resource utilization required to deliver the same performance, as k is often much smaller than the total size of the test set. **As such, we decided to use the k sequential reduction trees, rather than a mergesort, for our final implementation.**
+
+### Bit Precision
 
 For the iris dataset, we only have three possible labels, and have relatively low precision data points; thus, we can use significantly fewer bits for both our labels and our data points. This saves on SRAM usage and also yields smaller logic units, decreasing resource utilization.
 
@@ -115,6 +138,8 @@ The maximum value for a distance in our dataset is 7.9. Thus, the smallest data 
 +--------------------------------------+-------+-------+-----------+-------+
 ```
 Switching to 8-bit values decreased resource utilization, especially of LUTs used as memory, as the amount of memory that we need to store is now much smaller. **As such, we decided to use 8-bit values for our optimized algorithm.**
+
+### Paralellization
 
 Finally, we experimented with different parallelization values to find a good compromise between runtime and resource utilization.
 
