@@ -24,11 +24,8 @@ In software, we implemented K-Nearest Neighbors on the Iris dataset using multip
 
 **Figure 2: Runtime vs K Value**
 
-Our software implementation is located on github, at `https://github.com/khuang/ee109`.
-
-
 ## Hardware Implementation
-Like the results reported in literature, we used a highly paralellized set of distance calculation elements. We also used a predetermined range sort using k sequential reductions through a reduction tree; this yields k log(N) runtime with N log(N) resource utilization. A block diagram is provided in Figure 1.
+Like the implementations reported in literature, we used a highly parallelized set of distance calculation elements. We also used a predetermined range sort using k sequential reductions through a reduction tree; this yields k log(N) runtime with N log(N) resource utilization. A block diagram is provided in Figure 1.
 
 ![Block diagram](block_diagram.png)
 
@@ -42,6 +39,9 @@ Like the results reported in literature, we used a highly paralellized set of di
 ```
 
 ## Appendix
+
+All of our source code is located on github, at `https://github.com/khuang/ee109`.
+
 ```
 // If you have any comments about the class, or have a video you want to show us,
 // feel free to add them in the Appendix.
