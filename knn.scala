@@ -61,10 +61,10 @@ import spatial.dsl._
       val classes = 3.to[Int]
 
       val base = 0.to[Int]
-      val test_par = 1.to[Int]
-      val train_par = 1.to[Int]
-      val dist_par = 1.to[Int]
-      val load_par = 1.to[Int]
+      val test_par = 4.to[Int]
+      val train_par = 2.to[Int]
+      val dist_par = 4.to[Int]
+      val load_par = 64.to[Int]
       val step = 1.to[Int]
 
       val test_sram = SRAM[Q4_4](nTest, vLen)
@@ -106,7 +106,7 @@ import spatial.dsl._
 
       val sorted_sram = SRAM[DistLabel](k, nTest)
 
-      val sort_par = 1.to[Int]
+      val sort_par = 32.to[Int]
       val max_dist = 7.9.to[Q4_4] //the largest value in the dataset
 
       val old_dist = RegFile[Q4_4](nTest)

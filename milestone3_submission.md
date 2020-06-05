@@ -1,11 +1,26 @@
 # Milestone 3 Submission
 
 ## Performance numbers
-After optimization, we classified 15 test points in X cycles, with a classification accuracy of 93.33%.
+After optimization, we classified 15 test points in 44944 cycles, with a classification accuracy of 93.33%.
 
 Our resource utilization was:
 ```bash
-# Please attach your report here
++--------------------------------------+--------+-------+-----------+-------+
+|               Site Type              |  Used  | Fixed | Available | Util% |
++--------------------------------------+--------+-------+-----------+-------+
+| Slice LUTs                           | 113339 |     0 |    218600 | 51.85 |
+|   LUT as Logic                       |  88458 |     0 |    218600 | 40.47 |
+|   LUT as Memory                      |   4832 |     0 |     70400 |  6.86 |
+|     LUT as Distributed RAM           |   2808 |     0 |           |       |
+|     LUT as Shift Register            |   2024 |     0 |           |       |
+|   LUT used exclusively as pack-thrus |  20049 |     0 |    218600 |  9.17 |
+| Slice Registers                      |  96265 |     0 |    437200 | 22.02 |
+|   Register as Flip Flop              |  96260 |     0 |    437200 | 22.02 |
+|   Register as Latch                  |      0 |     0 |    437200 |  0.00 |
+|   Register as pack-thrus             |      5 |     0 |    437200 | <0.01 |
+| F7 Muxes                             |   1318 |     0 |    109300 |  1.21 |
+| F8 Muxes                             |    268 |     0 |     54650 |  0.49 |
++--------------------------------------+--------+-------+-----------+-------+
 ```
 
 ## Design Choices
@@ -143,5 +158,23 @@ Switching to 8-bit values decreased resource utilization, especially of LUTs use
 
 Finally, we experimented with different parallelization values to find a good compromise between runtime and resource utilization.
 
+Looking at the initial instrumentation hooks, the bottleneck in the original, unparallelized implementation was in the loading of the SRAMs. Thus, the first parameter we decided to parallelize to reduce this bottleneck was the `load_par`. In order to find thhe best compromise between runtime and resource utilization, we looked at cycle count for different values for the `load_par` parameter and the effect on runtime as measured by cycle count. Since we never maxed out our resource utilization, we were able to find the best balance between performance and resource utilization by simply looking at when the performance would stagnate. When this would happen, increasing the parallelization would not increase performance but would increase resource utilization, so the tradeoff would clearly not be worth it after this point. We then repeated this procedure multiple times by looking at the instrumentation hooks and parallizing the other bottlenecks. In the end, after tuning all parallelization factors, cycle count went from the original 92724 cycle down to 44944 cycles. Naturally, the resource utilization increased, which is displayed below:
+
 ```
++--------------------------------------+--------+-------+-----------+-------+
+|               Site Type              |  Used  | Fixed | Available | Util% |
++--------------------------------------+--------+-------+-----------+-------+
+| Slice LUTs                           | 113339 |     0 |    218600 | 51.85 |
+|   LUT as Logic                       |  88458 |     0 |    218600 | 40.47 |
+|   LUT as Memory                      |   4832 |     0 |     70400 |  6.86 |
+|     LUT as Distributed RAM           |   2808 |     0 |           |       |
+|     LUT as Shift Register            |   2024 |     0 |           |       |
+|   LUT used exclusively as pack-thrus |  20049 |     0 |    218600 |  9.17 |
+| Slice Registers                      |  96265 |     0 |    437200 | 22.02 |
+|   Register as Flip Flop              |  96260 |     0 |    437200 | 22.02 |
+|   Register as Latch                  |      0 |     0 |    437200 |  0.00 |
+|   Register as pack-thrus             |      5 |     0 |    437200 | <0.01 |
+| F7 Muxes                             |   1318 |     0 |    109300 |  1.21 |
+| F8 Muxes                             |    268 |     0 |     54650 |  0.49 |
++--------------------------------------+--------+-------+-----------+-------+
 ```
