@@ -116,6 +116,7 @@ for k in ks:
 	times.append(time_elapsed)
 	scores.append(metrics.accuracy_score(y_test, y_pred))
 
+print(np.mean(times))
 
 #plot the data
 for type in distance_types:

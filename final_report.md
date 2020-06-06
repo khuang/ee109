@@ -34,6 +34,8 @@ Like the implementations reported in literature, we used a highly parallelized s
 ### Performance
 After optimization, we classified 15 test points in 44944 cycles, with a classification accuracy of 93.33%.
 
+With a 100 MHz clock rate, our design could classify 15 points in 449 us. The optimized software implementation could classify 15 points in, on average, about 1604 us while running on an Intel Xeon processor.  Thus, we ultimately achieved a 72% improvement over the software implementation.
+
 Our resource utilization was:
 ```bash
 +--------------------------------------+--------+-------+-----------+-------+
