@@ -34,7 +34,11 @@ Like the implementations reported in literature, we used a highly parallelized s
 ### Performance
 After optimization, we classified 15 test points in 44944 cycles, with a classification accuracy of 93.33%.
 
-With a 100 MHz clock rate, our design could classify 15 points in 449 us. The optimized software implementation could classify 15 points in, on average, about 1604 us while running on an Intel Xeon processor.  Thus, we ultimately achieved a 72% improvement over the software implementation.
+With a 100 MHz clock rate, our design could classify 15 points in 449 us. The estimate for power consumption from synthesis was 2.808 Watts.
+
+The optimized software implementation could classify 15 points in, on average, about 1604 us while running on one core of an Intel Xeon processor. It also consumed 9.608 mJ of energy on average, reulting in a power consumption of 5.99 Watts. Increasing parallelization in scikit-learn ended up slowing the classifier down significantly, as the synchronization overhead dominated the runtime for this small dataset; the parallel CPU runtime was 0.109 seconds.
+
+Thus, we ultimately achieved a 72% runtime improvement over the best software implementation, and an 87% improvement in performance-per-watt.
 
 Our resource utilization was:
 ```bash

@@ -48,7 +48,7 @@ all_rates = {}
 all_times = {}
 ks = range(1,20)
 distance_types = ["euclidian", "manhattan", "chebyshev"]
-seeds = range(1,50)
+seeds = range(1,2)
 
 #try different distance metrics
 for type in distance_types:
@@ -107,16 +107,24 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.1, rando
 
 scores = []
 times = []
+res = []
+import pyRAPL
 for k in ks:
+	pyRAPL.setup()
 	start_time = time.time()
-	knn = KNeighborsClassifier(n_neighbors=k)
+	meter = pyRAPL.Measurement('bar')
+	meter.begin()
+	knn = KNeighborsClassifier(n_neighbors=k, n_jobs=1)
 	knn.fit(x_train, y_train)
 	y_pred=knn.predict(x_test)
 	time_elapsed = time.time() - start_time
+	meter.end()
+	res.append(meter.result.pkg[0])
 	times.append(time_elapsed)
 	scores.append(metrics.accuracy_score(y_test, y_pred))
 
 print(np.mean(times))
+print(str(np.mean(res)) + " uJ")
 
 #plot the data
 for type in distance_types:
